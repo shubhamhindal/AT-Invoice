@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -35,8 +35,21 @@ import {
   ChevronRight,
   ChevronLeft
 } from '@mui/icons-material';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { deleteInvoice, getInvoices, type InvoiceListItem } from '@/lib/api';
 import { toast } from 'react-toastify';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -44,7 +57,7 @@ export default function DashboardPage() {
   const [filtered, setFiltered] = useState<InvoiceListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year' >('today');
+  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year' | 'alltime'>('alltime');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -56,40 +69,57 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const data = await getInvoices();
-      const sorted = data.sort((a, b) => 
+      const sorted = data.sort((a, b) =>
         new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
       );
       setInvoices(sorted);
       setFiltered(sorted);
     } catch (err) {
-      console.error(err);
-       toast.error("Failed to load invoices", {
-        position: 'top-right',
-        autoClose: 8000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-      });
+      toast.error('Failed to load invoices');
     } finally {
       setLoading(false);
     }
   }
 
+  const filteredByDate = useMemo(() => {
+    if (dateRange === 'alltime') return invoices;
+
+    const now = new Date();
+    const start = new Date();
+
+    switch (dateRange) {
+      case 'today':
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        start.setMonth(now.getMonth() - 1);
+        break;
+      case 'year':
+        start.setFullYear(now.getFullYear() - 1);
+        break;
+    }
+
+    return invoices.filter(inv => new Date(inv.invoiceDate) >= start);
+  }, [invoices, dateRange]);
+
+  // Search filter
   useEffect(() => {
     const term = search.toLowerCase().trim();
-
     if (!term) {
-      setFiltered(invoices);
+      setFiltered(filteredByDate);
       return;
     }
     setFiltered(
-      invoices.filter((i) => {
+      filteredByDate.filter((i) => {
         const invoiceNo = String(i.invoiceNo ?? '').toLowerCase();
         const customerName = String(i.customerName ?? '').toLowerCase();
         return invoiceNo.includes(term) || customerName.includes(term);
       })
     );
-  }, [search, invoices]);
+  }, [search, filteredByDate]);
 
   const formatCurrency = (amount: number) =>
     `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -97,14 +127,45 @@ export default function DashboardPage() {
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  const totalRevenue = invoices.reduce((sum, i) => sum + i.invoiceAmount, 0);
+  const totalRevenue = filtered.reduce((sum, i) => sum + i.invoiceAmount, 0);
 
   const formatInvoiceNo = (no: string | number | null | undefined) =>
     `INV-${String(no ?? '0').padStart(4, '0')}`;
 
+  const monthlyData = useMemo(() => {
+    const months = Array(12).fill(0).map((_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (11 - i));
+      return {
+        name: d.toLocaleDateString('en-US', { month: 'short' }),
+        revenue: 0,
+      };
+    });
+
+    filtered.forEach(inv => {
+      const date = new Date(inv.invoiceDate);
+      const monthIndex = 11 - (new Date().getMonth() - date.getMonth() + 12) % 12;
+      if (monthIndex >= 0 && monthIndex < 12) {
+        months[monthIndex].revenue += inv.invoiceAmount;
+      }
+    });
+
+    return months.map(m => ({ ...m, revenue: Math.round(m.revenue) }));
+  }, [filtered]);
+
+  // Top 5 Items by Revenue (mocked — replace with real item data later)
+  const topItemsData = [
+    { name: 'Product A', value: 8450 },
+    { name: 'Service X', value: 6200 },
+    { name: 'Item B', value: 4800 },
+    { name: 'Consulting', value: 3200 },
+    { name: 'License', value: 2100 },
+    { name: 'Others', value: 3150 },
+  ];
+
   return (
     <Container maxWidth="xl">
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 2, sm: 0 }, mb: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 4 }}>
         <Typography variant="h4" fontWeight={700} color="#1e293b">
           Invoices
         </Typography>
@@ -126,19 +187,16 @@ export default function DashboardPage() {
             },
           }}
         >
-          {['Today', 'Week', 'Month', 'Year'].map((label) => (
+          {['Today', 'Week', 'Month', 'Year', 'All Time'].map((label) => (
             <ToggleButton
               key={label}
-              value={label.toLowerCase()}
+              value={label.toLowerCase().replace(' ', '')}
               sx={{
                 textTransform: 'none',
                 border: 'none',
-                fontWeight: 500,
-                bgcolor: dateRange === label.toLowerCase() ? '#1e293b' : 'transparent',
-                color: dateRange === label.toLowerCase() ? 'white' : '#64748b',
-                '&:hover': {
-                  bgcolor: dateRange === label.toLowerCase() ? '#1e293b' : '#e2e8f0',
-                },
+                color: dateRange === label.toLowerCase().replace(' ', '') ? 'white' : '#64748b',
+                bgcolor: dateRange === label.toLowerCase().replace(' ', '') ? '#1e293b' : 'transparent',
+                '&:hover': { bgcolor: dateRange === label.toLowerCase().replace(' ', '') ? '#1e293b' : '#e2e8f0' },
               }}
             >
               {label}
@@ -160,52 +218,99 @@ export default function DashboardPage() {
         }}
       >
         <Card sx={{ borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography color="text.secondary" variant="body2">
+          <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+            <Typography color="text.secondary" variant="body2" fontWeight={500}>
               Total Invoices
             </Typography>
-            <Typography variant="h5" fontWeight={600} color="#1e293b" mt={1}>
-              {invoices.length}
+            <Typography variant="h4" fontWeight={700} color="#1e293b" mt={1}>
+              {filtered.length}
             </Typography>
             <Typography variant="caption" color="#64748b">
-              All time
+              All time · {invoices.length} total
             </Typography>
           </CardContent>
         </Card>
 
         <Card sx={{ borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography color="text.secondary" variant="body2">
+            <Typography color="text.secondary" variant="body2" fontWeight={500}>
               Total Revenue
             </Typography>
-            <Typography variant="h5" fontWeight={600} color="#10b981" mt={1}>
+            <Typography variant="h4" fontWeight={700} color="#10b981" mt={1.5}>
               {formatCurrency(totalRevenue)}
             </Typography>
             <Typography variant="caption" color="#64748b">
-              All time
+              {dateRange === 'alltime' ? 'All time' : `This ${dateRange}`}
             </Typography>
           </CardContent>
         </Card>
 
-        <Card sx={{ borderRadius: 3, bgcolor: '#f8fafc' }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography color="text.secondary" variant="body2">
+        <Card sx={{ borderRadius: 3, bgcolor: '#f8fafc', overflow: 'hidden' }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 }, height: 180 }}>
+            <Typography color="text.secondary" variant="body2" fontWeight={500} mb={2}>
               Revenue Trend
             </Typography>
-            <Box sx={{ height: 80, bgcolor: '#e2e8f0', borderRadius: 2, my: 2 }} />
-            <Typography variant="caption" color="#64748b">
+
+            <ResponsiveContainer width="100%" height={110}>
+              <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                {/* These two lines are REQUIRED for 12 bars to show */}
+                <XAxis dataKey="name" hide />           {/* Hide labels but keep layout */}
+                <YAxis hide />
+
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                  contentStyle={{
+                    fontSize: '0.8rem',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#1e293b',
+                    color: 'white',
+                  }}
+                  cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                />
+
+                <Bar
+                  dataKey="revenue"
+                  fill="#3b82f6"
+                  radius={[6, 6, 0, 0]}
+                  barSize={14}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+
+            <Typography variant="caption" color="#64748b" sx={{ display: 'block', mt: 1 }}>
               Last 12 months
             </Typography>
           </CardContent>
         </Card>
 
-        <Card sx={{ borderRadius: 3, bgcolor: '#f8fafc' }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography color="text.secondary" variant="body2">
+        <Card sx={{ borderRadius: 3, bgcolor: '#f8fafc', overflow: 'hidden' }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 }, height: 180, display: 'flex', flexDirection: 'column' }}>
+            <Typography color="text.secondary" variant="body2" fontWeight={500} mb={1}>
               Top Items
             </Typography>
-            <Box sx={{ height: 80, bgcolor: '#e2e8f0', borderRadius: 2, my: 2 }} />
-            <Typography variant="caption" color="#64748b">
+            <Box sx={{ flexGrow: 1, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={topItemsData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={28}
+                    outerRadius={50}
+                    paddingAngle={3}
+                  >
+                    {topItemsData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+            <Typography variant="caption" color="#64748b" sx={{ mt: 'auto' }}>
               Item distribution
             </Typography>
           </CardContent>

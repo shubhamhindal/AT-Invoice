@@ -44,6 +44,9 @@ export default function Navbar() {
     { text: 'Dashboard', href: '/dashboard', icon: <DashboardIcon /> },
     { text: 'Items', href: '/items', icon: <Inventory2OutlinedIcon /> },
   ];
+  if (pathname?.includes('/print/')) {
+    return null;
+  }
 
   const isActive = (path: string) => pathname === path;
 

@@ -17,6 +17,7 @@ import {
 import { Print } from "@mui/icons-material";
 import Image from "next/image";
 import { getInvoice } from "@/lib/api";
+import companyLogoUrl from '../../../../../../public/images/invoice.jpeg'
 
 interface InvoiceLine {
   itemID: number;
@@ -103,18 +104,17 @@ export default function InvoicePrintPage() {
         @media screen {
           .print-container {
             max-width: 210mm;
-            min-height: 277mm;
-            margin: 20px auto;
-            padding: 30px;
+            min-height: 247mm;
+            margin: auto;
+            padding: 20px;
             background: white;
-            box-shadow: 0 10px 10px rgba(0,0,0,0.15);
             border-radius: 8px;
             font-family: 'Segoe UI', Arial, sans-serif;
           }
         }
         @media print {
           html, body {
-            height: 297mm;
+            height: auto;
             width: 210mm;
             margin: 0 !important;
             padding: 0 !important;
@@ -123,7 +123,7 @@ export default function InvoicePrintPage() {
           .no-print { display: none !important; }
           .print-container {
             width: 210mm;
-            height: 297mm;
+            height: 267mm;
             padding: 25mm;
             margin: 0;
             box-sizing: border-box;
@@ -132,10 +132,10 @@ export default function InvoicePrintPage() {
             line-height: 1.4;
           }
           table { font-size: 9pt; }
-          h1 { font-size: 22pt; }
-          h2 { font-size: 18pt; }
-          h3 { font-size: 14pt; }
-          h4 { font-size: 12pt; }
+          h1 { font-size: 20pt; }
+          h2 { font-size: 16pt; }
+          h3 { font-size: 12pt; }
+          h4 { font-size: 10pt; }
         }
         @page {
           size: A4;
@@ -154,19 +154,13 @@ export default function InvoicePrintPage() {
           <Box sx={{ flex: 1, p: { xs: 3, print: 0 } }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
               <Box>
-                {invoice.companyLogoUrl ? (
                   <Image
-                    src={invoice.companyLogoUrl}
+                    src={companyLogoUrl}
                     alt="Company Logo"
                     width={120}
                     height={120}
                     style={{ objectFit: "contain" }}
                   />
-                ) : (
-                  <Typography variant="h4" fontWeight="bold" color="primary">
-                    {invoice.companyName || "Invoice APP"}
-                  </Typography>
-                )}
                 <Box sx={{ mt: 2, color: "#666", fontSize: "11pt" }}>
                   <Typography>Indore</Typography>
                   <Typography>Madhya Pradesh, India</Typography>
@@ -174,7 +168,7 @@ export default function InvoicePrintPage() {
               </Box>
 
               <Box sx={{ textAlign: "right" }}>
-                <Typography variant="h4" fontWeight="bold" color="#1e293b">
+                <Typography variant="h5" fontWeight="bold" color="#1e293b">
                   INVOICE
                 </Typography>
                 <Typography variant="h5" color="#64748b" sx={{ mt: 1 }}>
@@ -195,7 +189,7 @@ export default function InvoicePrintPage() {
               </Box>
             </Box>
 
-            <Box sx={{ mb: 6 }}>
+            <Box sx={{ mb: 3 }}>
               <Typography variant="h5" fontWeight={600} color="#1e293b">
                 Bill To
               </Typography>
@@ -206,7 +200,7 @@ export default function InvoicePrintPage() {
               </Box>
             </Box>
 
-            <TableContainer sx={{ mb: 6 }}>
+            <TableContainer sx={{ mb: 2 }}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f8fafc" }}>
@@ -264,7 +258,7 @@ export default function InvoicePrintPage() {
                 <Typography variant="h5" fontWeight="bold">
                   Total Amount
                 </Typography>
-                <Typography variant="h4" fontWeight="bold" color="#059669">
+                <Typography variant="h5" fontWeight="bold" color="#059669">
                   {formatCurrency(invoice.invoiceAmount)}
                 </Typography>
               </Box>
@@ -281,7 +275,7 @@ export default function InvoicePrintPage() {
               </Box>
             )}
 
-            <Box sx={{ mt: "auto", pt: 4, textAlign: "center", color: "#64748b" }}>
+            <Box sx={{ mt: "auto", pt: 2, textAlign: "center", color: "#64748b" }}>
               <Typography variant="h5" fontWeight={600}>
                 Thank you for your business!
               </Typography>
