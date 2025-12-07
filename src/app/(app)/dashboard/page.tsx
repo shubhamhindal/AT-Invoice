@@ -529,7 +529,8 @@ export default function DashboardPage() {
                   <Select
                     value={rowsPerPage}
                     onChange={(e) => {
-                      setRowsPerPage(parseInt(e.target.value as string, 10));
+                    const value = e.target.value;
+                      setRowsPerPage(typeof value === 'number' ? value : parseInt(value, 10));
                       setPage(0);
                     }}
                     size="small"
