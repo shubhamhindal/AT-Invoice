@@ -1,6 +1,6 @@
 "use client";
 import { toast } from "react-toastify";
-const API_BASE = "https://alitinvoiceappapi.azurewebsites.net";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://alitinvoiceappapi.azurewebsites.net/api";
 
 class ApiError extends Error {
   status?: number;
@@ -123,13 +123,13 @@ export const login = (
   email: string,
   password: string
 ): Promise<LoginResponse> =>
-  apiFetch<LoginResponse>("/api/auth/login", {
+  apiFetch<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email: email.trim(), password }),
   });
 
 export const signup = (formData: FormData): Promise<LoginResponse> =>
-  apiFetch<LoginResponse>("/api/auth/signup", {
+  apiFetch<LoginResponse>("/auth/signup", {
     method: "POST",
     body: formData,
   });
@@ -146,24 +146,24 @@ interface Item {
 }
 
 export const getItems = (): Promise<Item[]> =>
-  apiFetch<Item[]>("/api/Item/GetList");
+  apiFetch<Item[]>("/Item/GetList");
 export const getItem = (id: number): Promise<Item> =>
-  apiFetch<Item>(`/api/Item/${id}`);
+  apiFetch<Item>(`/Item/${id}`);
 
 export const createItem = (data: unknown): Promise<Item> =>
-  apiFetch<Item>("/api/Item", {
+  apiFetch<Item>("/Item", {
     method: "POST",
     body: JSON.stringify(data),
   });
 
 export const updateItem = (data: unknown): Promise<Item> =>
-  apiFetch<Item>(`/api/Item`, {
+  apiFetch<Item>(`/Item`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 
 export const deleteItem = (id: number): Promise<void> =>
-  apiFetch<void>(`/api/Item/${id}`, { method: "DELETE" });
+  apiFetch<void>(`/Item/${id}`, { method: "DELETE" });
 
 export interface ItemCategory {
   categoryID: number;
@@ -172,9 +172,9 @@ export interface ItemCategory {
 }
 
 export const getCategories = (): Promise<ItemCategory[]> =>
-  apiFetch<ItemCategory[]>("/api/itemcategories");
+  apiFetch<ItemCategory[]>("/itemcategories");
 export const createCategory = (name: string): Promise<ItemCategory> =>
-  apiFetch<ItemCategory>("/api/itemcategories", {
+  apiFetch<ItemCategory>("/itemcategories", {
     method: "POST",
     body: JSON.stringify({ categoryName: name.trim() }),
   });
@@ -182,12 +182,12 @@ export const updateCategory = (
   id: number,
   name: string
 ): Promise<ItemCategory> =>
-  apiFetch<ItemCategory>(`/api/itemcategories/${id}`, {
+  apiFetch<ItemCategory>(`/itemcategories/${id}`, {
     method: "PUT",
     body: JSON.stringify({ categoryName: name.trim() }),
   });
 export const deleteCategory = (id: number): Promise<void> =>
-  apiFetch<void>(`/api/itemcategories/${id}`, { method: "DELETE" });
+  apiFetch<void>(`/itemcategories/${id}`, { method: "DELETE" });
 
 export interface Invoice {
   invoiceID: number;
@@ -254,28 +254,28 @@ export const getInvoices = (params?: {
     if (params.toDate) q.append("toDate", params.toDate);
     query = q.toString() ? `?${q.toString()}` : "";
   }
-  return apiFetch<InvoiceListItem[]>(`/api/Invoice/GetList${query}`);
+  return apiFetch<InvoiceListItem[]>(`/Invoice/GetList${query}`);
 };
 
 export const getInvoice = (id: number): Promise<Invoice> =>
-  apiFetch<Invoice>(`/api/Invoice/${id}`);
+  apiFetch<Invoice>(`/Invoice/${id}`);
 
 export const createInvoice = (
   data: Omit<Invoice, "invoiceID">
 ): Promise<Invoice> =>
-  apiFetch<Invoice>("/api/Invoice", {
+  apiFetch<Invoice>("/Invoice", {
     method: "POST",
     body: JSON.stringify(data),
   });
 
 export const updateInvoice = (data: Invoice): Promise<Invoice> =>
-  apiFetch<Invoice>("/api/Invoice", {
+  apiFetch<Invoice>("/Invoice", {
     method: "PUT",
     body: JSON.stringify(data),
   });
 
 export const deleteInvoice = (id: number): Promise<void> =>
-  apiFetch<void>(`/api/Invoice/${id}`, { method: "DELETE" });
+  apiFetch<void>(`/Invoice/${id}`, { method: "DELETE" });
 
 export interface InvoiceLine {
   rowNo: number;
@@ -303,7 +303,7 @@ export const createUpdateInvoice = async (
 ): Promise<unknown> => {
   const isUpdate = data.invoiceID !== undefined && data.invoiceID > 0;
 
-  const url = "/api/Invoice";
+  const url = "/Invoice";
   const method = isUpdate ? "PUT" : "POST";
 
   return apiFetch<unknown>(url, {
