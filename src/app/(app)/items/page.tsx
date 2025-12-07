@@ -65,7 +65,7 @@ export default function ItemsPage() {
       setItems(data);
     } catch (err) {
       console.error('Failed to load items:', err);
-      toast.error( err || 'Failed to load items');
+      toast.error( err instanceof Error ? err.message : 'Failed to load items');
     } finally {
       setLoading(false);
     }

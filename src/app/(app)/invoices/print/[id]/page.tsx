@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Print } from "@mui/icons-material";
 import Image from "next/image";
-import { getInvoice } from "@/lib/api";
+import { getInvoice, Invoice } from "@/lib/api";
 import companyLogoUrl from '../../../../../../public/images/invoice.jpeg'
 
 interface InvoiceLine {
@@ -27,28 +27,28 @@ interface InvoiceLine {
   discountPct: number;
 }
 
-interface InvoiceData {
-  invoiceID: number;
-  invoiceNo: number;
-  invoiceDate: string;
-  customerName: string;
-  address: string;
-  city: string;
-  taxPercentage: number;
-  notes?: string;
-  totalItems: number;
-  lines: InvoiceLine[];
-  subTotal: number;
-  taxAmount: number;
-  invoiceAmount: number;
-  companyName?: string;
-  companyLogoUrl?: string;
-  currencySymbol?: string;
-}
+// interface InvoiceData {
+//   invoiceID: number;
+//   invoiceNo: number;
+//   invoiceDate: string;
+//   customerName: string;
+//   address: string;
+//   city: string;
+//   taxPercentage: number;
+//   notes?: string;
+//   totalItems: number;
+//   lines: InvoiceLine[];
+//   subTotal: number;
+//   taxAmount: number;
+//   invoiceAmount: number;
+//   companyName?: string;
+//   companyLogoUrl?: string;
+//   currencySymbol?: string;
+// }
 
 export default function InvoicePrintPage() {
   const { id } = useParams();
-  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -214,7 +214,8 @@ export default function InvoicePrintPage() {
                 </TableHead>
                 <TableBody>
                   {invoice.lines.map((line, i) => {
-                    const lineTotal = line.quantity * line.rate * (1 - line.discountPct / 100);
+                    const discountPct = line.discountPct ?? 0;
+                    const lineTotal = line.quantity * line.rate * (1 - discountPct / 100);
                     return (
                       <TableRow key={i}>
                         <TableCell sx={{ py: 1.5 }}>{i + 1}</TableCell>
@@ -228,7 +229,7 @@ export default function InvoicePrintPage() {
                           {formatCurrency(line.rate)}
                         </TableCell>
                         <TableCell align="right" sx={{ py: 1.5 }}>
-                          {line.discountPct > 0 ? `${line.discountPct}%` : "-"}
+                          {discountPct > 0 ? `${line.discountPct}%` : "-"}
                         </TableCell>
                         <TableCell align="right" sx={{ py: 1.5, fontWeight: 600 }}>
                           {formatCurrency(lineTotal)}

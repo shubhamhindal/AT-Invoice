@@ -189,17 +189,6 @@ export const updateCategory = (
 export const deleteCategory = (id: number): Promise<void> =>
   apiFetch<void>(`/itemcategories/${id}`, { method: "DELETE" });
 
-export interface Invoice {
-  invoiceID: number;
-  invoiceNumber: string;
-  customerName: string;
-  issueDate: string;
-  dueDate: string;
-  totalAmount: number;
-  status: "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
-  currencySymbol: string;
-}
-
 export interface InvoiceLine {
   rowNo: number;
   itemID: number;
@@ -209,7 +198,26 @@ export interface InvoiceLine {
   discountPct?: number | null;
 }
 
+// export interface Invoice {
+//   invoiceID: number;
+//   invoiceNo: number;
+//   invoiceDate: string;
+//   customerName: string;
+//   address?: string | null;
+//   city?: string | null;
+//   taxPercentage: number;
+//   notes?: string | null;
+//   lines: InvoiceLine[];
+//   subTotal?: number;
+//   taxAmount?: number;
+//   totalAmount: number;
+//   status: "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
+//   issueDate: string;
+//   itemsCount?: number;
+// }
+
 export interface Invoice {
+  primaryKeyID: number;
   invoiceID: number;
   invoiceNo: number;
   invoiceDate: string;
@@ -218,13 +226,18 @@ export interface Invoice {
   city?: string | null;
   taxPercentage: number;
   notes?: string | null;
+  totalItems: number;
   lines: InvoiceLine[];
   subTotal?: number;
   taxAmount?: number;
-  totalAmount: number;
-  status: "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
-  issueDate: string;
-  itemsCount?: number;
+  invoiceAmount: number;
+  createdByUserName: string;
+  createdOn: string;
+  updatedByUserName: string | null;
+  updatedOn: string | null;
+  companyName?: string;
+  companyLogoUrl?: string;
+  currencySymbol: string;
 }
 
 export interface InvoiceListItem {
