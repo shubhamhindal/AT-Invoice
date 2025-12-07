@@ -2,21 +2,26 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
   const token = request.cookies.get('auth_token')?.value;
+  const pathname = request.nextUrl.pathname;
 
+  if (pathname === '/') {
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    } else {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // Optional: Also protect your routes (you already have this)
   const protectedPaths = ['/dashboard', '/invoices', '/items'];
-  const isProtectedRoute = protectedPaths.some(path => 
-    pathname.startsWith(path)
-  );
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p));
 
-  const isPublicOnlyRoute = pathname === '/login' || pathname === '/signup';
-
-  if (!token && isProtectedRoute) {
+  if (!token && isProtected) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (token && isPublicOnlyRoute) {
+  if (token && (pathname === '/login' || pathname === '/signup')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -25,6 +30,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*',
     '/invoices/:path*',
     '/items/:path*',
